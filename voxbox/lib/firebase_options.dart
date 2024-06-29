@@ -64,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '391024164188',
     projectId: 'voxbox-aff8f',
     storageBucket: 'voxbox-aff8f.appspot.com',
+    iosClientId: '391024164188-rq0cj2siqr6addprl7dmd9dd2mn87ek3.apps.googleusercontent.com',
     iosBundleId: 'com.example.voxbox',
   );
 
@@ -73,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '391024164188',
     projectId: 'voxbox-aff8f',
     storageBucket: 'voxbox-aff8f.appspot.com',
+    iosClientId: '391024164188-rq0cj2siqr6addprl7dmd9dd2mn87ek3.apps.googleusercontent.com',
     iosBundleId: 'com.example.voxbox',
   );
 
@@ -85,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'voxbox-aff8f.appspot.com',
     measurementId: 'G-CBC6HPX1EJ',
   );
+
 }

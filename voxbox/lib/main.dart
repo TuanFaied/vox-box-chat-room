@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:voxbox/Screens/mybox_screen.dart';
 import 'Auth/app_state.dart';
 import 'Screens/sign_in_screen.dart';
 import 'Screens/room_screen.dart';
@@ -22,8 +23,8 @@ class MyApp extends StatelessWidget {
         title: 'Chat Room App',
         initialRoute: '/',
         routes: {
-          '/': (context) => RoomScreen(),
-          '/room': (context) => RoomScreen(),
+          '/': (context) => SignInScreen(),
+          '/room': (context) => MyBoxesScreen(),
         },
       ),
     );

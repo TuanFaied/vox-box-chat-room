@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart' as chat_ui;
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:voxbox/Auth/app_state.dart';
+import 'package:voxbox/constants.dart';
 
 class MessagingScreen extends StatefulWidget {
   @override
@@ -9,81 +12,125 @@ class MessagingScreen extends StatefulWidget {
 }
 
 class _MessagingScreenState extends State<MessagingScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  late DatabaseReference _messagesRef;
+  late CollectionReference _messagesRef;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final appState = Provider.of<AppState>(context);
-    _messagesRef = FirebaseDatabase.instance.reference().child('rooms').child(appState.roomName!).child('messages');
+    _messagesRef = FirebaseFirestore.instance
+        .collection('rooms')
+        .doc(appState.roomName!)
+        .collection('messages');
   }
 
-  void _sendMessage() {
+  void _sendMessage(types.PartialText message) async {
     final appState = Provider.of<AppState>(context, listen: false);
-    String message = _messageController.text.trim();
-    if (message.isNotEmpty) {
-      _messagesRef.push().set({
-        'text': message,
-        'sender': appState.displayName,
+    if (appState.user != null) {
+      _messagesRef.add({
+        'text': message.text,
+        'sender': appState.user!.displayName,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'userId': appState.user!.uid,
       });
-      _messageController.clear();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final user = types.User(
+      id: appState.userId ?? '',
+      firstName: appState.displayName ?? '',
+    );
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat Room: ${appState.roomName}')),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<DatabaseEvent>(
-              stream: _messagesRef.orderByChild('timestamp').onValue,
-              builder: (context, snapshot) {
-                if (snapshot.hasData && !snapshot.hasError && snapshot.data!.snapshot.value != null) {
-                  Map data = snapshot.data!.snapshot.value as Map;
-                  List messages = data.entries.map((entry) => entry.value).toList();
-                  messages.sort((a, b) => a['timestamp'].compareTo(b['timestamp']));
-
-                  return ListView.builder(
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      var message = messages[index];
-                      return ListTile(
-                        title: Text(message['sender']),
-                        subtitle: Text(message['text']),
-                        trailing: Text(DateTime.fromMillisecondsSinceEpoch(message['timestamp']).toLocal().toString()),
-                      );
-                    },
-                  );
-                } else {
-                  return Center(child: Text('No messages yet.'));
-                }
-              },
+      backgroundColor: kPrimaryColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+            Text(
+              '${appState.roomName}',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(labelText: 'Enter your message'),
+            const SizedBox(height: 20),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(30),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: _sendMessage,
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _messagesRef.orderBy('timestamp').snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                          child: Text('An error occurred: ${snapshot.error}'));
+                    }
+
+                    List<types.Message> messages =
+                        snapshot.data!.docs.reversed.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+
+                      // Handle missing or null fields
+                      final text = data['text'] as String? ?? 'No text';
+                      final senderName = data['sender'] as String? ?? 'Anonymous';
+                      final userId = data['userId'] as String? ?? '';
+                      final timestamp = data['timestamp'] as int? ?? 0;
+
+                      final author = types.User(
+                        id: userId,
+                        firstName: senderName,
+                      );
+
+                      return types.TextMessage(
+                        author: author,
+                        createdAt: timestamp,
+                        id: doc.id,
+                        text: text,
+                      );
+                    }).toList();
+
+                    return chat_ui.Chat(
+                      scrollPhysics: const BouncingScrollPhysics(),
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      messages: messages,
+                      onSendPressed: _sendMessage,
+                      user: user,
+                      showUserNames: true,
+                      showUserAvatars: true,
+                      theme: chat_ui.DefaultChatTheme(
+                        inputBackgroundColor: Colors.grey,
+                        inputBorderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(10),
+                          right: Radius.circular(10),
+                        ),
+                        sendButtonIcon: Icon(
+                          Icons.send,
+                          color: kPrimaryColor,
+                        ),
+                        
+
+                      ),
+                      
+                    );
+                  },
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
