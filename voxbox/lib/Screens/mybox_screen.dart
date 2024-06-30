@@ -204,7 +204,11 @@ class _MyBoxesScreenState extends State<MyBoxesScreen> {
     final String? userId = appState.userId;
 
     if (roomId.isNotEmpty) {
-      FirebaseFirestore.instance.collection('rooms').doc(roomId).get().then((documentSnapshot) {
+      FirebaseFirestore.instance
+          .collection('rooms')
+          .doc(roomId)
+          .get()
+          .then((documentSnapshot) {
         if (documentSnapshot.exists) {
           FirebaseFirestore.instance.collection('rooms').doc(roomId).update({
             'participants': FieldValue.arrayUnion([userId]),
@@ -217,13 +221,15 @@ class _MyBoxesScreenState extends State<MyBoxesScreen> {
           });
         } else {
           setState(() {
-            errorMessage = "Can't find a box with given id"; // Update error message state
+            errorMessage =
+                "Can't find a box with given id"; // Update error message state
           });
         }
       }).catchError((error) {
         print('Error joining room: $error');
         setState(() {
-          errorMessage = 'Error joining room: $error'; // Update error message state
+          errorMessage =
+              'Error joining room: $error'; // Update error message state
         });
       });
     } else {
@@ -251,64 +257,79 @@ class _MyBoxesScreenState extends State<MyBoxesScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Container(
-              height: 690,
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(30),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
-              ),
-              child: StreamBuilder<List<DocumentSnapshot>>(
-                stream: _fetchRooms(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Please create a new box or join an existing one',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  } else {
-                    return ListView.builder(
-                      itemCount: snapshot.data!.length,
-                      itemBuilder: (context, index) {
-                        var room = snapshot.data![index];
-                        String roomName = room['name'];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            child: Text(
-                              roomName.isNotEmpty ? roomName[0] : '',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            backgroundColor: Theme.of(context).primaryColor,
+                child: StreamBuilder<List<DocumentSnapshot>>(
+                  stream: _fetchRooms(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Please create a new box or join an existing one',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
                           ),
-                          title: Text(room['name']),
-                          onTap: () {
-                            Provider.of<AppState>(context, listen: false).setRoom(room.id);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => MessagingScreen()),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  }
-                },
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    } else {
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              physics: NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: snapshot.data!.length,
+                              itemBuilder: (context, index) {
+                                var room = snapshot.data![index];
+                                String roomName = room['name'];
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    child: Text(
+                                      roomName.isNotEmpty ? roomName[0] : '',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    backgroundColor:
+                                        Theme.of(context).primaryColor,
+                                  ),
+                                  title: Text(room['name']),
+                                  onTap: () {
+                                    Provider.of<AppState>(context,
+                                            listen: false)
+                                        .setRoom(room.id);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              MessagingScreen()),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(
+                                height: 80), // Adjust as needed for input bar
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                ),
               ),
             ),
           ],
@@ -319,11 +340,13 @@ class _MyBoxesScreenState extends State<MyBoxesScreen> {
           return FloatingActionButton(
             onPressed: () {
               final RenderBox button = context.findRenderObject() as RenderBox;
-              final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+              final RenderBox overlay =
+                  Overlay.of(context).context.findRenderObject() as RenderBox;
               final RelativeRect position = RelativeRect.fromRect(
                 Rect.fromPoints(
                   button.localToGlobal(Offset.zero, ancestor: overlay),
-                  button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+                  button.localToGlobal(button.size.bottomRight(Offset.zero),
+                      ancestor: overlay),
                 ),
                 Offset.zero & overlay.size,
               );

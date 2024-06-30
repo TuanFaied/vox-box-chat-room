@@ -132,7 +132,7 @@ class _MessagingScreenState extends State<MessagingScreen> {
     );
   }
 
-  Widget _buildMessage(String text, String sender, String time, bool isUserMessage, String userId) {
+ Widget _buildMessage(String text, String sender, String time, bool isUserMessage, String userId) {
   return Align(
     alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
     child: Container(
@@ -149,30 +149,58 @@ class _MessagingScreenState extends State<MessagingScreen> {
         crossAxisAlignment: isUserMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (!isUserMessage)
-            FutureBuilder<String?>(
-              future: Provider.of<AppState>(context, listen: false).getUserPhotoURL(userId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return Icon(Icons.account_circle); // Placeholder if error occurs
-                } else if (snapshot.hasData && snapshot.data != null) {
-                  return CircleAvatar(
-                    radius: 12,
-                    backgroundImage: NetworkImage(snapshot.data!),
-                  );
-                } else {
-                  return Icon(Icons.account_circle); // Placeholder if no data
-                }
-              },
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                FutureBuilder<String?>(
+                  future: Provider.of<AppState>(context, listen: false).getUserPhotoURL(userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return Icon(Icons.account_circle); // Placeholder if error occurs
+                    } else if (snapshot.hasData && snapshot.data != null) {
+                      return CircleAvatar(
+                        radius: 16,
+                        backgroundImage: NetworkImage(snapshot.data!),
+                      );
+                    } else {
+                      return Icon(Icons.account_circle); // Placeholder if no data
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sender,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      text,
+                      style: TextStyle(
+                        color: isUserMessage ? Colors.white : Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          Text(
-            text,
-            style: TextStyle(
-              color: isUserMessage ? Colors.white : Colors.black,
-              fontSize: 16,
+          if (isUserMessage)
+            Text(
+              text,
+              style: TextStyle(
+                color: isUserMessage ? Colors.white : Colors.black,
+                fontSize: 16,
+              ),
             ),
-          ),
           const SizedBox(height: 5),
           Text(
             time,
